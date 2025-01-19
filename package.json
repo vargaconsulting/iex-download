@@ -1,0 +1,33 @@
+
+{
+  "name": "iex-download",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "steven varga, vargaconsulting",
+  "license": "commercial",
+  "bin": {
+    "iex-download": "./download.mjs"
+  },
+  "dependencies": {
+    "cli-progress": "^3.11.2",
+    "colors": "^1.4.0",
+    "dateformat": "^5.0.3",
+    "filesize": "^10.0.6",
+    "filesize-parser": "^1.5.0",
+    "fs": "^0.0.1-security",
+    "node-gyp": "^9.3.1",
+    "process": "^0.11.10",
+    "puppeteer": "^23.6.1",
+    "sprintf-js": "^1.1.2",
+    "url": "^0.11.0",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "terser": "^5.20.0"
+  },
+  "scripts": {
+    "compress": "terser ./download.mjs --config-file ./.terserrc.json --output ./download.min.mjs",
+    "help": "echo 'Available scripts:' && echo '  npm run compress: Minifies the JavaScript file (download.mjs) and outputs download.min.mjs' && echo '  npm run help: Displays this help message'"
+  }
+}
