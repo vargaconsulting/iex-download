@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /*
  *   ALL RIGHTS RESERVED.
  *   _________________________________________________________________________________
@@ -13,9 +14,6 @@
  *   Copyright © <2017-2022> Varga Consulting, Toronto, On     info@vargaconsulting.ca
  *   _________________________________________________________________________________
  */
-//You then need to import like this import * as fetch from 'node-fetch'; – 
-
-//import * as df from 'dateformat';
 import dateFormat, { masks } from "dateformat";
 import * as process from 'process';
 import _yargs from 'yargs';
@@ -46,9 +44,8 @@ function get_filename(url_name) {
 	return filename.replace(/[\/]/g,'_');
 }
 
-function summary(feed, start, stop, download_path, dry_run){
+function summary(feed, start, stop, download_path, progress_stall_timeout, max_retry, dry_run){
 	(async () => {
-
 		const browser = await puppeteer.launch();
 		const page = await browser.newPage();
 		await page.setUserAgent(userAgent);
@@ -74,35 +71,61 @@ function summary(feed, start, stop, download_path, dry_run){
 			const ver  = await page.evaluate(element => element.innerHTML, td[i+2]);
 			// maintain invariants
 			total_size += size; total_count ++;
-			// set progress bar format
-			const format_str = sprintf('%3i %5s %5s %8s %14s', total_count, feed, ver, trading_day, filesize(size));
-			const bar = new progress_bar.SingleBar({
-				barCompleteChar: '\u25A0',
-				barIncompleteChar: '\u25A1',
-				format: format_str + ' {bar} {percentage}% | ETA: {eta}s | {value}/{total}'
-			}, progress_bar.Presets.rect);
-			// increment counters
-			// download filename is encoded in the link
+			const format_str = sprintf('%3i %5s %5s %8s %14s', total_count, feed, ver, trading_day, filesize(size)); // set progress bar format
 			var filename = download_path +'/'+ get_filename(link);
 			fs.access(filename, fs.constants.F_OK, (err) => {
-					not_exists = err ? true : false; });
-			// do actual download with feedback
-			if( !dry_run ){
+				not_exists = err ? true : false; });
+				// do actual download with feedback
+			if (!dry_run) for (var attempt = 0; attempt < max_retry; attempt++) {
+				const bar = new progress_bar.SingleBar({
+					barCompleteChar: '\u25A0',
+					barIncompleteChar: '\u25A1',
+					format: format_str + ' {bar} {percentage}% | ETA: {eta}s | {value}/{total}'
+				}, progress_bar.Presets.rect);
 				bar.start(size, 0);
-				await page.evaluate(element => element.children[0].click(), td[i+1]); // do click in page context
-				while(not_exists){
-					fs.access(filename, fs.constants.F_OK, (err) => not_exists = err ? true : false );
-					try {
-						const stats = fs.statSync(filename + '.crdownload');
-						bar.update(stats.size);
-					}catch(e) {}
-					await delay(1000);
+				const start_time = Date.now();
+				let last_progress_time = Date.now(), last_size = 0, is_timed_out = false, is_no_progress = false;
+				await page.evaluate(element => element.children[0].click(), td[i + 1]); // download filename is encoded in the link
+				while (true) { // progress bar update
+					const elapsed_time = Date.now() - start_time;
+					const since_last_progress = Date.now() - last_progress_time;
+					is_no_progress = since_last_progress > progress_stall_timeout;
+					if (is_timed_out || is_no_progress || fs.existsSync(filename)) break;
+					try {                               // update progress bar if `.crdownload` file exists
+						const temp_file = filename + '.crdownload';
+						if (fs.existsSync(temp_file)) {
+							const stats = fs.statSync(temp_file);
+							bar.update(stats.size);
+							if (stats.size > last_size) { 		// detect progress
+								last_size = stats.size;
+								last_progress_time = Date.now(); // reset no-progress timer
+							}
+						}
+					} catch (e) {
+						console.warn(`Error reading temporary file: ${e.message}`);
+					}
+					await delay(1000); // wait before checking again
 				}
-				bar.update(size);
+				bar.update(size); // ensure the bar completes
 				bar.stop();
-				// once completed, rename file
-				fs.renameSync(filename, download_path + '/' + feed + '-' + trading_day + '.pcap.gz');
-			} else { // fake downloaded file
+				if(is_no_progress) continue; // we try it in next iteration
+				try {// rename file to final name
+					if (fs.existsSync(filename)) {
+						fs.renameSync(filename, download_path + '/' + feed + '-' + trading_day + '.pcap.gz');
+					} else {
+						console.error(`Download failed for file: ${filename}`);
+						continue; // give another chance... 
+					}
+					break; // at this point we do have the goods, so we can break out of the loop...
+				} catch (e) {
+					console.error(`Error renaming file: ${e.message}`);
+				}
+			} else { // simulate download progress for dry run
+				const bar = new progress_bar.SingleBar({
+					barCompleteChar: '\u25A0',
+					barIncompleteChar: '\u25A1',
+					format: format_str + ' {bar} {percentage}% | ETA: {eta}s | {value}/{total}'
+				}, progress_bar.Presets.rect);				
 				bar.start(size, 0);
 				bar.stop();
 			}
@@ -119,47 +142,69 @@ function summary(feed, start, stop, download_path, dry_run){
 	})();
 }
 
+const usage_txt = `
+!!IEX-DOWNLOAD is a web scraping utility built with Puppeteer to retrieve
+datasets from IEX. The datasets are gzip-compressed packet capture (pcap)
+files of Ethernet frames, which can be further processed using the H5CPP-
+based \`iex2h5\` conversion utility to transform them into the HDF5 format.
+
+After running the script, the \`download\` directory will be populated with
+TOPS or DEEP gzip-compressed datasets, named according to the corresponding
+trading day. For additional details on processing the data, see \`iex2h5\`.
+
+The data is provided free of charge by IEX. By accessing or using IEX
+Historical Data, you agree to their Terms of Use. For more information,
+visit: https://iextrading.com/iex-historical-data-terms/
+
+INSTALLATION:
+   npm install puppeteer url fs filesize-parser filesize cli-progress
+   sprintf-js dateformat yargs
+`;
 
 const yargs = _yargs(hideBin(process.argv));
 (async () => {
     var today = new Date();
     var yesterday = today.setDate(today.getDate() - 2);
     const argv = await yargs
-    .usage(
-    'IEX-DOWNLOAD is a puppeteer based web scraping utility for IEX datasets. The datasets are gzip compressed packet capure (pcap) files of ethernet frames which may be further processed with H5CPP based `iex2h5` conversion utility into HDF5 format. After exexuting the script the `download` directory is populated with TOPS or DEEP gzip compressed datasets with names representing the given trading day. See `iex2h5` for further details. \n'
-    + '\nData provided for free by IEX. By accessing or using IEX Historical Data, you agree to the IEX Historical Data Terms of Use.\nSee: https://iextrading.com/iex-historical-data-terms/ \n\n'
-    + 'INSTALL:\n   npm i puppeteer url fs filesize-parser filesize cli-progress sprintf-js dateformat yargs\n'
-    )
+        .usage(usage_txt)
         .option('deep', {
             conflicts: 'tops',
-            describe: 'download IEX DEEP datasets'
+            describe: 'Download IEX DEEP datasets'
         })
         .option('tops', {
             conflicts: 'deep',
             describe: 'Download IEX TOPS datasets'
         })
         .option('directory', {
-            describe: 'location to save downloaded files',
-            default: '/lake/iex/queue'
+            describe: 'Location to save downloaded files',
+            default: './'
+        })
+        .option('progress_stall_timeout', {
+            describe: 'Timeout duration (in seconds) to detect and handle stalled downloads',
+            default: 30
+        })
+        .option('max_retry', {
+            describe: 'Number of times to retry downloading the same file before giving up',
+            default: 5
         })
         .option('from', {
-            describe: 'date you start downloading from',
+            describe: 'Date you start downloading from',
             default: df(yesterday, "isoDate")
         })
         .option('to', {
-            describe: 'last day',
-            default: df(new Date(),"isoDate")
+            describe: 'Last day to download',
+            default: df(new Date(), "isoDate")
         })
         .option('dry-run', {
-            describe: 'skips downloading',
+            describe: 'Skips downloading',
         })
         .help()
-        .epilogue('Copyright © <2017-2022> Varga Consulting, Toronto, ON, info@vargaconsulting.ca')
-        .argv
+		.wrap(null)
+        .epilogue('Copyright © <2017-2022> Varga Consulting, Toronto, ON. info@vargaconsulting.ca')
+        .argv;
 
-        const dataset = argv.deep ? "DEEP" : "TOPS";
-        const dryrun = argv.dryRun ? true : false;
-        // console.log(argv.from, argv.to)
-        // execute the actual download script
-        summary(dataset, new Date(argv.from), new Date(argv.to), argv.directory, dryrun);
+    const dataset = argv.deep ? "DEEP" : "TOPS";
+    const dryrun = argv.dryRun ? true : false;
+    summary(dataset, new Date(argv.from), new Date(argv.to), argv.directory,
+        argv.progress_stall_timeout * 1000, argv.max_retry, dryrun);
 })();

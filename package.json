@@ -1,13 +1,13 @@
-
 {
   "name": "iex-download",
-  "version": "1.0.0",
+  "version": "2.1.7",
   "description": "",
   "main": "index.js",
-  "author": "steven varga, vargaconsulting",
+  "type": "module",
+  "author": "steven varga, vargaconsulting.ca",
   "license": "commercial",
   "bin": {
-    "iex-download": "./download.mjs"
+    "iex-download": "./iex-download.mjs"
   },
   "dependencies": {
     "cli-progress": "^3.11.2",
@@ -16,6 +16,7 @@
     "filesize": "^10.0.6",
     "filesize-parser": "^1.5.0",
     "fs": "^0.0.1-security",
+    "iex-download": "file:iex-download-2.1.21.tgz",
     "node-gyp": "^9.3.1",
     "process": "^0.11.10",
     "puppeteer": "^23.6.1",
@@ -27,7 +28,12 @@
     "terser": "^5.20.0"
   },
   "scripts": {
-    "compress": "terser ./download.mjs --config-file ./.terserrc.json --output ./download.min.mjs",
-    "help": "echo 'Available scripts:' && echo '  npm run compress: Minifies the JavaScript file (download.mjs) and outputs download.min.mjs' && echo '  npm run help: Displays this help message'"
+    "build": "terser ./download.mjs --config-file ./.terserrc.json --output ./dist/iex-download.mjs && chmod +x ./dist/iex-download.mjs",
+    "generate-dist": "node generate-package-dist.cjs",
+    "copy-package": "npm run generate-dist",
+    "package": "npm pack ./dist",
+    "distribute": "npm run build && npm run copy-package && npm run package",
+    "clean": "rm -rf dist *.tgz ",
+    "help": "echo 'Available scripts:' && echo '  npm run build: Minifies and prepares the iex-download executable' && echo '  npm run distribute: Builds, prepares, and packages the distribution' && echo '  npm run help: Displays this help message'"
   }
 }
