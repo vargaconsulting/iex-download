@@ -143,7 +143,7 @@ function summary(feed, start, stop, download_path, progress_stall_timeout, max_r
 }
 
 const usage_txt = `
-!!IEX-DOWNLOAD is a web scraping utility built with Puppeteer to retrieve
+IEX-DOWNLOAD is a web scraping utility built with Puppeteer to retrieve
 datasets from IEX. The datasets are gzip-compressed packet capture (pcap)
 files of Ethernet frames, which can be further processed using the H5CPP-
 based \`iex2h5\` conversion utility to transform them into the HDF5 format.
