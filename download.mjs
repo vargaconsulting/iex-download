@@ -11,7 +11,7 @@
  *   tion  of  this  material is strictly forbidden unless prior written permission is
  *   obtained from Varga Consulting.
  *
- *   Copyright © <2017-2022> Varga Consulting, Toronto, On     info@vargaconsulting.ca
+ *   Copyright © <2017-2025> Varga Consulting, Toronto, On     info@vargaconsulting.ca
  *   _________________________________________________________________________________
  */
 import dateFormat, { masks } from "dateformat";
@@ -137,7 +137,7 @@ function summary(feed, start, stop, download_path, progress_stall_timeout, max_r
 				+ total_count + ' count ' + feed + ' dataset '
 				+ filesize(total_size) + ' of cumulative size.');
 		}
-		console.log('Copyright © <2017-2022> Varga Consulting, Toronto, ON, info@vargaconsulting.ca');
+		console.log('Copyright © <2017-2025> Varga Consulting, Toronto, ON, info@vargaconsulting.ca');
 	await browser.close();
 	})();
 }
@@ -157,8 +157,7 @@ Historical Data, you agree to their Terms of Use. For more information,
 visit: https://iextrading.com/iex-historical-data-terms/
 
 INSTALLATION:
-   npm install puppeteer url fs filesize-parser filesize cli-progress
-   sprintf-js dateformat yargs
+	npm install ./iex-download-x.y.z.tgz
 `;
 
 const yargs = _yargs(hideBin(process.argv));
@@ -200,7 +199,7 @@ const yargs = _yargs(hideBin(process.argv));
         })
         .help()
 		.wrap(null)
-        .epilogue('Copyright © <2017-2022> Varga Consulting, Toronto, ON. info@vargaconsulting.ca')
+        .epilogue('Copyright © <2017-2025> Varga Consulting, Toronto, ON. info@vargaconsulting.ca')
         .argv;
 
     const dataset = argv.deep ? "DEEP" : "TOPS";

@@ -9,7 +9,7 @@
 # tion  of  this  material is strictly forbidden unless prior written permission is
 # obtained from Varga Consulting.
 #
-# Copyright © <2017-2022> Varga Consulting, Toronto, On     info@vargaconsulting.ca
+# Copyright © <2017-2025> Varga Consulting, Toronto, On     info@vargaconsulting.ca
 # _________________________________________________________________________________
 
 import glob
@@ -29,7 +29,7 @@ def run(cmd: str) -> bool:
 def main():
     parser = argparse.ArgumentParser(description='''IEX-DIGEST-CRON
         Process pcap.gz files and converts them into regular or irregular time series using iex2h5.''',
-        epilog="Copyright © <2017-2022> Varga Consulting, Toronto, ON. info@vargaconsulting.ca"
+        epilog="Copyright © <2017-2025> Varga Consulting, Toronto, ON. info@vargaconsulting.ca"
     )
 
     parser.add_argument("--input-dir", required=True, help="Directory containing input pcap.gz files")
@@ -38,7 +38,7 @@ def main():
     parser.add_argument("--decompressor", default="unpigz -c", help="Decompression command for input files")
     parser.add_argument("--time-interval", type=int, default=60, help="Time interval argument for iex2h5")
     parser.add_argument("--group", type=int, default=5, help="Group size argument for iex2h5")
-    parser.add_argument("--processed-dir", default="/lake/iex/tops", help="Directory to move processed files")
+    parser.add_argument("--processed-dir", default="./", help="Directory to move processed files")
     parser.add_argument("--command-assets", default="assets", help="Command for initializing assets")
     parser.add_argument("--command-rts", default="rts", help="Command for processing RTS data")
     parser.add_argument("--command-index", default="index", help="Command for re-indexing the database")
