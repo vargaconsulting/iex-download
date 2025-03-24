@@ -1,16 +1,11 @@
 
 # IEX High Frequency Dataset
-<p align='justify'>
-IEX exchange provides [free access to its historical data-sets][101] such as top of book: TOPS and depth of book: DEEP  through web interface. Less fortunate is the requirement of clicking on the links to start downloading the files. This inconvenience is mitigated with `iex-download` written in nodejs, based on headless chrome browser, and a few additional packages.
-</p><p align='justify'>
-TOPS datasets are top of the book of aggregated `ask` and `bid` requests, and reported trade events for each transaction. Similarly DEEP contains all reported `trade`-s in addition to available quantities for different price levels for `ask` and `bid` sides. For details see: [IEX2H5](conversion.md).
-</p>
-<p align='justify'>
-**NOTE**: This dataset simulates direct access / co-located data collection framework, but is significantly sparser then an aggregated national level II. dataset.
-DEEP and TOPS are roughly 700GB each, totaling to **1.4TB** in gzip compressed format. Uncompressed is roughly **6TB** data. This real world dataset
-is used to demonstrate the fitness of H5CLUSTER storage cabability, as well as  H5CPP seamless compiler assisted persistence framework.
-</p>
+IEX Exchange provides free access to historical datasets such as Top of Book (TOPS) and Depth of Book (DEEP) through its web interface.
+Unfortunately, downloading the files requires manually clicking each link — an inconvenience for large-scale use.
+This limitation is addressed by `iex-download`, a Node.js-based automation tool built with headless Chrome (Puppeteer) and supporting libraries.
 
+**TOPS** datasets provide top-of-book aggregated `ask` and `bid` quotes, along with reported trade events for each transaction.
+**DEEP** datasets extend this by including all reported trades and the available quantities at various price levels on both the ask and bid sides. In my understanding IEX DEEP does not quite qualify for a level II dataset.
 
 ## Features
 * robust [web scraping with][100] headless chromium and node js
@@ -24,42 +19,44 @@ is used to demonstrate the fitness of H5CLUSTER storage cabability, as well as  
 * a recent version of `node js` installed
 ```bash
 apt get install npm
-npm i puppeteer url fs filesize-parser filesize cli-progress sprintf-js dateformat yargs 
+npm ci    # install dependencier locally 
+npm start # builds and outputs `iex-download-2.1.8.tgz` distribution package
+npm install -g iex-download-2.1.8.tgz # install package globally on a host
 ```
 
 ## Usage
 ```bash
-IEX-DOWNLOAD  is a puppeteer based web scraping utility for IEX datasets, (pcap) files  of ethernet  frames
-which may be further processed with H5CPP based `iex2h5` conversion utility into HDF5 format. After execut-
-ing the script the `download` directory is populated with TOPS or DEEP gzip compressed  datasets with names 
-representing the given trading day. See `iex2h5` for further details
+IEX-DOWNLOAD is a web scraping utility built with Puppeteer to retrieve
+datasets from IEX. The datasets are gzip-compressed packet capture (pcap)
+files of Ethernet frames, which can be further processed using the H5CPP-
+based `iex2h5` conversion utility to transform them into the HDF5 format.
 
-Data provided for  free  by IEX. By accessing or using IEX Historical Data, you agree to the IEX Historical 
-Data Terms of Use. See: https://iextrading.com/iex-historical-data-terms/
+After running the script, the `download` directory will be populated with
+TOPS or DEEP gzip-compressed datasets, named according to the corresponding
+trading day. For additional details on processing the data, see `iex2h5`.
 
-INSTALL:
-   npm i puppeteer url fs filesize-parser filesize cli-progress sprintf-js dateformat yargs
+The data is provided free of charge by IEX. By accessing or using IEX
+Historical Data, you agree to their Terms of Use. For more information,
+visit: https://iextrading.com/iex-historical-data-terms/
+
+INSTALLATION:
+	npm install ./iex-download-x.y.z.tgz
+
 
 Options:
-  --version    Show version number                                     
-  --deep       download IEX DEEP datasets
-  --tops       Download IEX TOPS datasets
-  --directory  location to save downloaded files
-                                         [default: "current working directory"]
-  --from       date you start downloading from           [default: "first day"]
-  --to         last day                                      [default: "today"]
-  --dry-run    skips downloading
-  --help       Show help                                               
+  --version                 Show version number  [boolean]
+  --deep                    Download IEX DEEP datasets
+  --tops                    Download IEX TOPS datasets
+  --directory               Location to save downloaded files  [default: "./"]
+  --progress_stall_timeout  Timeout duration (in seconds) to detect and handle stalled downloads  [default: 30]
+  --max_retry               Number of times to retry downloading the same file before giving up  [default: 5]
+  --from                    Date you start downloading from  [default: "2025-03-22"]
+  --to                      Last day to download  [default: "2025-03-24"]
+  --dry-run                 Skips downloading
+  --help                    Show help  [boolean]
 
-                                 Copyright © <2019> Varga Consulting, Toronto, ON, info@vargaconsulting.ca
+Copyright © <2017-2025> Varga Consulting, Toronto, ON. info@vargaconsulting.ca
 ```
-
-## DEMO
-<asciinema-player src="../cast/iex.cast" 
-	cols=180 rows=40 autoplay=true speed=4 idle-time-limit=.1
-	font-size=small theme=solarized-light></asciinema-player>
-<script src="../js/asciinema-player.js"></script>
-
 
 
 [100]: https://en.wikipedia.org/wiki/Web_scraping
