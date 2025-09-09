@@ -21,7 +21,7 @@ This limitation is addressed by `iex-download`, a Node.js-based automation tool 
 apt get install npm
 npm ci    # install dependencier locally 
 npm start # builds and outputs `iex-download-2.1.8.tgz` distribution package
-npm install -g iex-download-2.1.8.tgz # install package globally on a host
+npm install -g iex-download-2.1.24.tgz # install package globally on a host
 ```
 
 ## Usage
