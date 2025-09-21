@@ -23,7 +23,7 @@ https://github.com/vargaconsulting/iex-download.git
 apt install npm
 npm ci    # install dependencier locally 
 npm start # builds and outputs `iex-download-2.1.8.tgz` distribution package
-npm install -g iex-download-2.1.23.tgz # install package globally on a host
+npm install -g iex-download-2.1.24.tgz # install package globally on a host
 ```
 
 ## Usage

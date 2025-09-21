@@ -1,6 +1,6 @@
 {
   "name": "iex-download",
-  "version": "2.1.23",
+  "version": "2.1.24",
   "description": "",
   "type": "module",
   "author": "steven varga, vargaconsulting.ca",
@@ -10,13 +10,18 @@
     "iex-digest-cron": "./iex-digest-cron"
   },
   "dependencies": {
+    "@puppeteer/browsers": "^2.10.8",
+    "chromium-bidi": "^8.0.0",
     "cli-progress": "^3.11.2",
     "colors": "^1.4.0",
     "dateformat": "^5.0.3",
+    "devtools-protocol": "^0.0.1495869",
     "filesize": "^10.0.6",
     "filesize-parser": "^1.5.0",
+    "iex-download": "file:iex-download-2.1.24.tgz",
     "node-gyp": "^9.3.1",
-    "puppeteer": "^23.6.1",
+    "puppeteer": "24.19.0",
+    "puppeteer-core": "24.19.0",
     "sprintf-js": "^1.1.2",
     "yargs": "^17.6.2"
   },
