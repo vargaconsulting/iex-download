@@ -16,12 +16,14 @@ This limitation is addressed by `iex-download`, a Node.js-based automation tool 
 * ability to specify download directory
 
 ## Prerequisites  
-* a recent version of `node js` installed
+* a  version of `node js` installed
 ```bash
-apt get install npm
+git clone git@github.com:vargaconsulting/iex-download.git
+https://github.com/vargaconsulting/iex-download.git
+apt install npm
 npm ci    # install dependencier locally 
 npm start # builds and outputs `iex-download-2.1.8.tgz` distribution package
-npm install -g iex-download-2.1.8.tgz # install package globally on a host
+npm install -g iex-download-2.1.23.tgz # install package globally on a host
 ```
 
 ## Usage
