@@ -13,15 +13,10 @@
  */
 
 use std::time::Duration;
-use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::fs::File;
-use std::io::{Read, Write};
-use clap::{Arg, Command};
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use chrono::{NaiveDate, Utc};
-use indicatif::{ProgressBar, ProgressStyle};
 use serde::de::{self, Visitor};
 use serde::Deserializer;
 use std::fmt;
@@ -61,6 +56,9 @@ fn to_u64<'de, D>(deserializer: D) -> Result<u64, D::Error> where D: Deserialize
 }
 
 fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run: bool) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::{Read, Write};
+    use std::fs::File;
+    use indicatif::{ProgressBar, ProgressStyle};
     let mut resp = client.get(&entry.link).send()?;
     let total_size = if dry_run { entry.size } else {
         client.get(&entry.link).send()?.content_length().unwrap_or(entry.size)
@@ -96,9 +94,10 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
     Ok(())
 }
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let about = r#"
+    use clap::{Command, Arg, arg, ArgAction::SetTrue, value_parser};
+    use std::collections::BTreeMap;
+
 IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
 IEX. The  datasets are gzip-compressed packet capture (pcap) files of
 Ethernet frames, which can be further processed using the H5CPP-based
