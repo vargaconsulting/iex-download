@@ -60,29 +60,24 @@ fn to_u64<'de, D>(deserializer: D) -> Result<u64, D::Error> where D: Deserialize
     deserializer.deserialize_any(U64Visitor)
 }
 
-fn show_dry_run(i: usize, entry: &HistEntry) {
-    let pb = ProgressBar::new(entry.size);
-    let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
-    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {percent}% | ETA: {eta} | 0/{total_bytes}")
-        .unwrap().progress_chars("□■"));
-    pb.set_message(
-        format!("{i:>5}  {feed:<4} v{ver:<3} {date}", i = i, feed = entry.feed, ver = entry.version, date = date));
-
-    pb.set_position(0);
-    pb.finish();
-}
-
-fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client) -> Result<(), Box<dyn std::error::Error>> {
+fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run: bool) -> Result<(), Box<dyn std::error::Error>> {
     let mut resp = client.get(&entry.link).send()?;
-    let total_size = resp.content_length().unwrap_or(0);
+    let total_size = if dry_run { entry.size } else {
+        client.get(&entry.link).send()?.content_length().unwrap_or(entry.size)
+    };
     let pb = ProgressBar::new(total_size);
     let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
     let path = dir.join(format!("{}-{}.pcap.gz", entry.feed, date));
-    
     pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {percent}% | ETA: {eta} | {bytes}/{total_bytes}")
         .unwrap().progress_chars("■□"));
     pb.set_message(
         format!("{i:>5}  {feed:<4} v{ver:<3} {date} ", i = i, feed = entry.feed, ver = entry.version, date = date));
+    
+    if dry_run {
+        pb.set_position(0);
+        pb.finish();
+        return Ok(());
+    }
 
     let mut file = File::create(path)?;
     let mut buffer = [0u8; 8192];
@@ -152,12 +147,8 @@ mation, visit: https://iextrading.com/iex-historical-data-terms/
             let is_tops = entry.feed == "TOPS";
             let is_dpls = entry.feed == "DPLS";
             
-            if dry_run {
-                if (deep && is_deep) || (dpls && is_dpls) || (tops && is_tops) {
-                    show_dry_run(i, entry);
-                }
-            } else { //  TOPS-2019-06-12.pcap.gz
-                download(i, entry, &directory, &client,)?;
+            if (deep && is_deep) || (dpls && is_dpls) || (tops && is_tops) {
+                download(i, entry, &directory, &client, dry_run)?;
             }
         }
     }
