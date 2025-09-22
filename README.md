@@ -16,7 +16,7 @@ This project provides `iex-download`, a **Rust-based automation tool** for fetch
 - Written in **Rust** with strong typing and reliability in mind  
 - Query the official IEX historical data API  
 - Date-range selection for downloading multiple days at once  
-- Choice of **TOPS** or **DEEP** datasets  
+- Choice of **TOPS**, **DEEP** or **DPLS** datasets  
 - **Dry-run mode** for listing available files without downloading  
 - Progress bar and retry logic for robust large-file transfers  
 - Customizable download directory  
@@ -35,7 +35,7 @@ cd iex-download
 Build and run:
 
 ```bash
-cargo run --release -- --help
+make && make install
 ```
 
 ## Usage
@@ -51,34 +51,37 @@ By accessing or using IEX Historical Data, you agree to their [Terms of Use](htt
 ### Command-line Options
 
 ```bash
-IEX-DOWNLOAD is a web scraping utility built with Puppeteer to retrieve
-datasets from IEX. The datasets are gzip-compressed packet capture (pcap)
-files of Ethernet frames, which can be further processed using the H5CPP-
-based `iex2h5` conversion utility to transform them into the HDF5 format.
-
-After running the script, the `download` directory will be populated with
-TOPS or DEEP gzip-compressed datasets, named according to the corresponding
-trading day. For additional details on processing the data, see `iex2h5`.
+IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
+IEX. The  datasets are gzip-compressed packet capture (pcap) files of
+Ethernet frames, which can be further processed using the H5CPP-based
+`iex2h5` conversion  utility to  transform them into the HDF5 format.
+After running the script, the  `download` directory will be populated
+with TOPS or DEEP  gzip-compressed datasets,  named  according to the
+corresponding trading day.  For details  on  processing the data, see
+`iex2h5`. 
 
 The data is provided free of charge by IEX. By accessing or using IEX
-Historical Data, you agree to their Terms of Use. For more information,
-visit: https://iextrading.com/iex-historical-data-terms/
+Historical  Data, you  agree  to their  Terms of Use. For more infor-
+mation, visit: https://iextrading.com/iex-historical-data-terms/
 
 Options:
-  --version                 Show version number  [boolean]
-  --deep                    Download IEX DEEP datasets
-  --tops                    Download IEX TOPS datasets
-  --directory               Location to save downloaded files  [default: "./"]
-  --progress_stall_timeout  Timeout (seconds) to detect stalled downloads  [default: 30]
-  --max_retry               Max retry attempts per file  [default: 5]
-  --from                    First trading day to download  [default: "2025-03-22"]
-  --to                      Last trading day to download   [default: "2025-03-24"]
-  --dry-run                 Query API without downloading
-  --help                    Show help  [boolean]
 
-Copyright © <2017-2025> Varga Consulting, Toronto, ON. info@vargaconsulting.ca
+--tops --deep --dpls Selects dataset type, probably you need `tops` only
+--dry-run        Skips downloading but prints out  what would take place
+--directory      Location to save the downloaded files
+--from           First trading day to download (YYYY-MM-DD)
+--to             Last trading day to download (YYYY-MM-DD)
+
+-h, --help       Display this message
+-v, --version    Display version info
+
+example:
+    iex-download --tops --from 2016-01-01 --to 2025-01-01 --directory /tmp
+
+Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
 ```
-
 
 [100]: https://en.wikipedia.org/wiki/Web_scraping
 [101]: https://iextrading.com/trading/market-data/
+[102]: https://steven-varga.ca/site/iex2h5/
+[103]: https://steven-varga.ca/iex2h5/
