@@ -48,6 +48,18 @@ fn to_u64<'de, D>(deserializer: D) -> Result<u64, D::Error> where D: Deserialize
     deserializer.deserialize_any(U64Visitor)
 }
 
+fn show_dry_run(i: usize, entry: &HistEntry) {
+    let pb = ProgressBar::new(entry.size);
+    let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
+    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {percent}% | ETA: {eta} | 0/{total_bytes}")
+        .unwrap().progress_chars("□■"));
+    pb.set_message(
+        format!("{i:>5}  {feed:<4} v{ver:<3} {date}", i = i, feed = entry.feed, ver = entry.version, date = date));
+
+    pb.set_position(0);
+    pb.finish();
+}
+
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -102,6 +114,7 @@ mation, visit: https://iextrading.com/iex-historical-data-terms/
             
             if dry_run {
                 if (deep && is_deep) || (dpls && is_dpls) || (tops && is_tops) {
+                    show_dry_run(i, entry);
                 }
             } else { //  TOPS-2019-06-12.pcap.gz
             }
