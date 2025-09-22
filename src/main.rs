@@ -98,7 +98,20 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let about = r#"
+    use clap::{Command, Arg, arg, ArgAction::SetTrue, value_parser};
+    use std::collections::BTreeMap;
+
+    let matches = Command::new(clap::crate_name!())
+        .version(clap::crate_version!()).author(clap::crate_authors!("\n"))
+    .args([
+        Arg::new("dry-run").long("dry-run").action(SetTrue),
+        arg!(--tops "Enable TOPS").action(SetTrue),
+        arg!(--deep "Enable DEEP").action(SetTrue),
+        arg!(--dpls "Enable DPLS").action(SetTrue),
+        arg!(--directory <DIR> "Output directory").default_value("./"),
+        arg!(--progress-stall-timeout <SECS>).default_value("30").value_parser(value_parser!(u64)),
+        arg!(--from <DATE> "Start date"), arg!(--to <DATE> "End date"),
+    ]).override_help(r#"
 IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
 IEX. The  datasets are gzip-compressed packet capture (pcap) files of
 Ethernet frames, which can be further processed using the H5CPP-based
@@ -111,30 +124,34 @@ corresponding trading day.  For details  on  processing the data, see
 The data is provided free of charge by IEX. By accessing or using IEX
 Historical  Data, you  agree  to their  Terms of Use. For more infor-
 mation, visit: https://iextrading.com/iex-historical-data-terms/
-"#;
 
-    let matches = Command::new(clap::crate_name!())
-        .version(clap::crate_version!()).about(about).author(clap::crate_authors!("\n"))
-        .arg(Arg::new("deep").long("deep").action(clap::ArgAction::SetTrue).help("Download IEX DEEP datasets"))
-        .arg(Arg::new("tops").long("tops").action(clap::ArgAction::SetTrue).help("Download IEX TOPS datasets"))
-        .arg(Arg::new("dpls").long("dpls").action(clap::ArgAction::SetTrue).help("Download IEX DPLS datasets"))
-        .arg(Arg::new("directory").long("directory").default_value("./").help("Location to save downloaded files"))
-        .arg(Arg::new("progress-stall-timeout").long("progress-stall-timeout").default_value("30").help("Timeout in seconds for stalled downloads"))
-        .arg(Arg::new("max-retry").long("max-retry").default_value("5").help("Max retry attempts per file"))
-        .arg(Arg::new("from").long("from").help("First trading day to download (YYYY-MM-DD)"))
-        .arg(Arg::new("to").long("to").help("Last trading day to download (YYYY-MM-DD)"))
-        .arg(Arg::new("dry_run").long("dry-run").action(clap::ArgAction::SetTrue).help("Skips downloading"))
-        .get_matches();
+Options:
+
+--tops --deep --dpls Selects dataset type, probably you need `tops` only
+--dry-run        Skips downloading but prints out  what would take place
+--directory      Location to save the downloaded files
+--from           First trading day to download (YYYY-MM-DD)
+--to             Last trading day to download (YYYY-MM-DD)
+
+-h, --help       Display this message
+-v, --version    Display version info
+
+example:
+    iex-download --tops --from 2016-01-01 --to 2025-01-01 --directory /tmp
+
+Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
+"#).get_matches();
+
     let today = Utc::now().date_naive();
+    let dry_run = matches.get_flag("dry-run");
     let deep = matches.get_flag("deep");
     let tops = matches.get_flag("tops");
     let dpls = matches.get_flag("dpls");
     let directory = PathBuf::from(matches.get_one::<String>("directory").unwrap());
     let from = matches.get_one::<String>("from").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
     let to = matches.get_one::<String>("to").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
-    let dry_run = matches.get_flag("dry_run");
+
     let client = Client::builder().timeout(Duration::from_secs(60)).build()?;
-    
     let resp: BTreeMap<String, Vec<HistEntry>> = client.get(HIST_URL).send()?.json()?;
 
     for (i, (date, entries)) in resp.iter().enumerate() {
