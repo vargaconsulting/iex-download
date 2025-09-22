@@ -60,6 +60,34 @@ fn show_dry_run(i: usize, entry: &HistEntry) {
     pb.finish();
 }
 
+fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client) -> Result<(), Box<dyn std::error::Error>> {
+    let mut resp = client.get(&entry.link).send()?;
+    let total_size = resp.content_length().unwrap_or(0);
+    let pb = ProgressBar::new(total_size);
+    let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
+    let path = dir.join(format!("{}-{}.pcap.gz", entry.feed, date));
+    
+    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {percent}% | ETA: {eta} | {bytes}/{total_bytes}")
+        .unwrap().progress_chars("■□"));
+    pb.set_message(
+        format!("{i:>5}  {feed:<4} v{ver:<3} {date} ", i = i, feed = entry.feed, ver = entry.version, date = date));
+
+    let mut file = File::create(path)?;
+    let mut buffer = [0u8; 8192];
+    let mut downloaded: u64 = 0;
+
+    loop {
+        let n = resp.read(&mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        file.write_all(&buffer[..n])?;
+        downloaded += n as u64;
+        pb.set_position(downloaded);
+    }
+    pb.finish();
+    Ok(())
+}
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -117,6 +145,7 @@ mation, visit: https://iextrading.com/iex-historical-data-terms/
                     show_dry_run(i, entry);
                 }
             } else { //  TOPS-2019-06-12.pcap.gz
+                download(i, entry, &directory, &client,)?;
             }
         }
     }
