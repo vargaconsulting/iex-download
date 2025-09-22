@@ -75,7 +75,7 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
     
     if dry_run {
         pb.set_position(0);
-        pb.finish();
+        pb.abandon();
         return Ok(());
     }
 
