@@ -68,7 +68,7 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
     let pb = ProgressBar::new(total_size);
     let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
     let path = dir.join(format!("{}-{}.pcap.gz", entry.feed, date));
-    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {percent}% | ETA: {eta} | {bytes}/{total_bytes}")
+    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {bytes_per_sec} | ETA: {eta} | {bytes}/{total_bytes}")
         .unwrap().progress_chars("■□"));
     pb.set_message(
         format!("{i:>5}  {feed:<4} v{ver:<3} {date} ", i = i, feed = entry.feed, ver = entry.version, date = date));
