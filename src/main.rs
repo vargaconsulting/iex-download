@@ -48,8 +48,9 @@ mation, visit: https://iextrading.com/iex-historical-data-terms/
 Options:
 
 --tops --deep --dpls Selects dataset type, probably you need `tops` only
---dry-run        Skips downloading but prints out  what would take place
 --directory      Location to save the downloaded files
+--dry-run        Skips downloading but prints out  what would take place
+--silent         Does not show progress bar
 
 -h, --help       Display this message
 -v, --version    Display version info
@@ -78,35 +79,46 @@ BNF grammar specification for dates:
 
 Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
 "#).trailing_var_arg(true).get_matches();
+    let (dry_run, silent, deep, tops, dpls) = (
+        prog.get_flag("dry-run"), prog.get_flag("silent"),
+        prog.get_flag("deep"), prog.get_flag("tops"), prog.get_flag("dpls") );
 
-    let dry_run = prog.get_flag("dry-run");
-    let deep = prog.get_flag("deep");
-    let tops = prog.get_flag("tops");
-    let dpls = prog.get_flag("dpls");
     let directory = PathBuf::from(prog.get_one::<String>("directory").unwrap());
     let rest: Vec<String> = prog.get_many::<String>("").unwrap_or_default().cloned().collect();
     let specs = rest.join(" ");
     let parsed = parse_datespec(&specs)?;
     let expanded = expand_datespec(parsed);
     let wanted: HashSet<NaiveDate> = expanded.into_iter().collect();
+    let mut selected: Vec<HistEntry> = Vec::new();
 
     let client = Client::builder().timeout(Duration::from_secs(60)).build()?;
     let resp: BTreeMap<String, Vec<HistEntry>> = client.get(HIST_URL).send()?.json()?;
 
-    for (i, (date, entries)) in resp.iter().enumerate() {
+    // collect pre-flight statistics
+    for (trading_day, (date, entries)) in resp.into_iter().enumerate() { // into_iter takes ownership
         let entry_date = NaiveDate::parse_from_str(&date, "%Y%m%d")?;
         if !wanted.contains(&entry_date) {
             continue;
         }
-        for entry in entries {
-            let is_deep = entry.feed == "DEEP";
-            let is_tops = entry.feed == "TOPS";
-            let is_dpls = entry.feed == "DPLS";
-            
+        for mut entry in entries { // entry is owned
+            let (is_deep, is_tops, is_dpls) = (
+                entry.feed == "DEEP", entry.feed == "TOPS", entry.feed == "DPLS");
+
             if (deep && is_deep) || (dpls && is_dpls) || (tops && is_tops) {
-                download(i, entry, &directory, &client, dry_run)?;
+                entry.trading_day = trading_day;
+                selected.push(entry);
             }
         }
+    }
+
+    // Print out statistics
+    let total_files = selected.len();
+    let total_size: u64 = selected.iter().map(|e| e.size).sum();
+    println!("Summary: {} files to download, total size ≈ {}", total_files, to_human(total_size));
+    if !(silent && dry_run) {
+        selected.iter().try_for_each(|entry| {
+            download(entry, &directory, &client, dry_run, silent)
+        })?;
     }
     Ok(())
 }
