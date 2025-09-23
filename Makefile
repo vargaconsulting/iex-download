@@ -25,6 +25,6 @@ clean:
 
 install: build
 	sudo install -Dm755 target/release/$(NAME) $(DESTDIR)$(BINDIR)/$(NAME)
-
+	sudo cp iex-download.1 /usr/local/share/man/man1/
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(NAME)

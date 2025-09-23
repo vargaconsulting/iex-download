@@ -1,0 +1,82 @@
+.TH IEX-DOWNLOAD 1 "September 2025" "v3.1.0" "User Commands"
+.SH NAME
+iex-download \- download IEX historical datasets
+.SH SYNOPSIS
+.B iex-download
+[\-\-tops|\-\-deep|\-\-dpls] [\-\-directory DIR] [\-\-dry-run] <date specification>
+.SH DESCRIPTION
+.IEX-DOWNLOAD
+is a web scraping utility to retrieve datasets from IEX. The datasets are
+gzip-compressed packet capture (pcap) files of Ethernet frames, which can be
+further processed using the H5CPP-based
+.BR iex2h5 (1)
+conversion utility to transform them into the HDF5 format.
+
+After running the script, the
+.B download
+directory will be populated with TOPS or DEEP gzip-compressed datasets,
+named according to the corresponding trading day.
+For details on processing the data, see
+.BR iex2h5 (1).
+
+The data is provided free of charge by IEX. By accessing or using IEX
+Historical Data, you agree to their Terms of Use.
+For more information, visit:
+.UR https://iextrading.com/iex-historical-data-terms/
+.UE
+.SH OPTIONS
+.TP
+.B \-\-tops
+Enable TOPS dataset.
+.TP
+.B \-\-deep
+Enable DEEP dataset.
+.TP
+.B \-\-dpls
+Enable DPLS dataset.
+.TP
+.B \-\-dry-run
+Skip downloading, but print what would take place.
+.TP
+.B \-\-directory DIR
+Output directory for downloaded files (default: ./).
+.TP
+.B \-h, \-\-help
+Display help message.
+.TP
+.B \-v, \-\-version
+Display version info.
+.SH DATE SPECIFICATION
+Date specifications can be a single date, a range, a sequence, or patterns with
+wildcards:
+
+.EX
+iex-download --tops --directory /tmp --dry-run 2024-04-01..2025-01-01
+iex-download --tops 2024-04-01:2025-01-01
+iex-download --deep 20240401..20250101
+iex-download --deep --tops 2025-01-1?,2025-01-?3
+iex-download --tops 2025-01-11,2025-01-12,2025-03-01
+.EE
+
+.SH GRAMMAR
+The date grammar is formally defined as:
+
+.EX
+<spec>       ::= <range> | <sequence> | <date>
+<range>      ::= <date> <range-sep> <date>
+<range-sep>  ::= ".." | ":"
+<sequence>   ::= <date> { "," <date> }
+<date>       ::= <year> "-" <month> "-" <day>
+               | <year> <month> <day>          ; compact form YYYYMMDD
+<year>       ::= <digit><digit><digit><digit>
+<month>      ::= <digit-or-wild><digit-or-wild>
+<day>        ::= <digit-or-wild><digit-or-wild>
+<digit>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+<digit-or-wild> ::= <digit> | "?"
+.EE
+
+.SH COPYRIGHT
+Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada  
+.MT info@vargalabs.com
+info@vargalabs.com
+.ME
