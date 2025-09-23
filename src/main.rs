@@ -181,8 +181,9 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use clap::{Command, Arg, arg, ArgAction::SetTrue, value_parser};
     use std::collections::BTreeMap;
+    use std::collections::HashSet;
 
-    let matches = Command::new(clap::crate_name!())
+    let prog = Command::new(clap::crate_name!())
         .version(clap::crate_version!()).author(clap::crate_authors!("\n"))
     .args([
         Arg::new("dry-run").long("dry-run").action(SetTrue),
@@ -191,7 +192,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arg!(--dpls "Enable DPLS").action(SetTrue),
         arg!(--directory <DIR> "Output directory").default_value("./"),
         arg!(--progress-stall-timeout <SECS>).default_value("30").value_parser(value_parser!(u64)),
-        arg!(--from <DATE> "Start date"), arg!(--to <DATE> "End date"),
+        Arg::new("").num_args(0..).trailing_var_arg(true)
     ]).override_help(r#"
 IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
 IEX. The  datasets are gzip-compressed packet capture (pcap) files of
@@ -221,23 +222,25 @@ example:
     iex-download --tops --from 2016-01-01 --to 2025-01-01 --directory /tmp
 
 Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
-"#).get_matches();
+"#).trailing_var_arg(true).get_matches();
 
-    let today = Utc::now().date_naive();
-    let dry_run = matches.get_flag("dry-run");
-    let deep = matches.get_flag("deep");
-    let tops = matches.get_flag("tops");
-    let dpls = matches.get_flag("dpls");
-    let directory = PathBuf::from(matches.get_one::<String>("directory").unwrap());
-    let from = matches.get_one::<String>("from").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
-    let to = matches.get_one::<String>("to").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
+    let dry_run = prog.get_flag("dry-run");
+    let deep = prog.get_flag("deep");
+    let tops = prog.get_flag("tops");
+    let dpls = prog.get_flag("dpls");
+    let directory = PathBuf::from(prog.get_one::<String>("directory").unwrap());
+    let rest: Vec<String> = prog.get_many::<String>("").unwrap_or_default().cloned().collect();
+    let specs = rest.join(" ");
+    let parsed = parse_datespec(&specs)?;
+    let expanded = expand_datespec(parsed);
+    let wanted: HashSet<NaiveDate> = expanded.into_iter().collect();
 
     let client = Client::builder().timeout(Duration::from_secs(60)).build()?;
     let resp: BTreeMap<String, Vec<HistEntry>> = client.get(HIST_URL).send()?.json()?;
 
     for (i, (date, entries)) in resp.iter().enumerate() {
         let entry_date = NaiveDate::parse_from_str(&date, "%Y%m%d")?;
-        if entry_date < from || entry_date > to {
+        if !wanted.contains(&entry_date) {
             continue;
         }
         for entry in entries {
