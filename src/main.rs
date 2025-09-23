@@ -7,12 +7,27 @@ use std::time::Duration;
 use std::path::PathBuf;
 use reqwest::blocking::Client;
 use serde::Deserialize;
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use serde::de::{self, Visitor};
 use serde::Deserializer;
 use std::fmt;
+use pest::Parser;
+use pest_derive::Parser;
 
 pub const HIST_URL: &str = "https://iextrading.com/api/1.0/hist";
+
+#[derive(Parser)]
+#[grammar = "grammar.pest"]
+struct DateSpecParser;
+
+#[derive(Debug)]
+pub enum DateSpec {
+    Range(String, String),
+    Sequence(Vec<String>),
+    Single(String),
+}
+
+
 
 #[derive(Debug, Deserialize)]
 struct HistEntry {

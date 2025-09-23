@@ -1,0 +1,15 @@
+WHITESPACE = _{ " " | "\t" }
+
+digit = { ASCII_DIGIT }
+wild  = { "?" }
+
+year  = @{ digit{4} }
+month = @{ (digit | wild){2} }
+day   = @{ (digit | wild){2} }
+
+date = @{ year ~ "-" ~ month ~ "-" ~ day | year ~ month ~ day }
+
+range_sep = _{ ".." | ":" }
+range     = { date ~ range_sep ~ date }
+sequence  = { date ~ ("," ~ date)+ }
+spec      = { range | sequence | date }
