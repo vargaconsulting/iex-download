@@ -1,182 +1,19 @@
-// This file is part of the IEX2H5 project and is licensed under the MIT License.
-//
-// Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada 🇨🇦
-// Contact: info@vargalabs.com 
+/* This file is part of the IEX2H5 project and is licensed under the MIT License.
+ Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada 🇨🇦 Contact: info@vargalabs.com */
+
+mod utils;
+mod parser;
+mod io;
 
 use std::time::Duration;
 use std::path::PathBuf;
 use reqwest::blocking::Client;
-use serde::Deserialize;
 use chrono::NaiveDate;
-use serde::de::{self, Visitor};
-use serde::Deserializer;
-use std::fmt;
-use pest::Parser;
-use pest_derive::Parser;
+use utils::to_human;
+use io::{HistEntry, download};
+use parser::{expand_datespec, parse_datespec};
 
 pub const HIST_URL: &str = "https://iextrading.com/api/1.0/hist";
-
-#[derive(Parser)]
-#[grammar = "grammar.pest"]
-struct DateSpecParser;
-
-#[derive(Debug)]
-pub enum DateSpec {
-    Range(String, String),
-    Sequence(Vec<String>),
-    Single(String),
-}
-fn parse_date(s: &str) -> Option<NaiveDate> {
-    NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
-        .or_else(|| NaiveDate::parse_from_str(s, "%Y%m%d").ok())
-}
-fn expand_pattern(pattern: &str) -> Vec<NaiveDate> {
-    let mut results = vec![pattern.to_string()];
-
-    for i in 0..pattern.len() {
-        if &pattern[i..i+1] == "?" {
-            let mut next = Vec::new();
-            for s in &results {
-                for d in '0'..='9' {
-                    let mut chars: Vec<char> = s.chars().collect();
-                    chars[i] = d;
-                    next.push(chars.iter().collect::<String>());
-                }
-            }
-            results = next;
-        }
-    }
-
-    results.into_iter().filter_map(|s| parse_date(&s)).collect()
-}
-
-
-pub fn expand_datespec(ds: DateSpec) -> Vec<NaiveDate> {
-    match ds {
-        DateSpec::Single(s) => expand_pattern(&s),
-
-        DateSpec::Sequence(v) => v.into_iter()
-            .flat_map(|s| expand_pattern(&s))
-            .collect(),
-
-        DateSpec::Range(s1, s2) => {
-            let start_candidates = expand_pattern(&s1);
-            let end_candidates   = expand_pattern(&s2);
-
-            if start_candidates.is_empty() || end_candidates.is_empty() {
-                return Vec::new();
-            }
-
-            let start = *start_candidates.iter().min().unwrap();
-            let end   = *end_candidates.iter().max().unwrap();
-
-            let mut dates = Vec::new();
-            let mut cur = start;
-            while cur <= end {
-                dates.push(cur);
-                cur = cur.succ_opt().unwrap();
-            }
-            dates
-        }
-    }
-}
-
-pub fn parse_datespec(input: &str) -> Result<DateSpec, Box<dyn std::error::Error>> {
-    let mut pairs = DateSpecParser::parse(Rule::spec, input)?;
-    let pair = pairs.next().unwrap();
-    let pair = if pair.as_rule() == Rule::spec {
-        pair.into_inner().next().unwrap()
-    } else { pair };
-
-    match pair.as_rule() {
-        Rule::date => Ok(DateSpec::Single(pair.as_str().to_string())),
-        Rule::range => {
-            let mut inner = pair.into_inner();
-            let d1 = inner.next().unwrap().as_str().to_string();
-            let d2 = inner.next().unwrap().as_str().to_string(); 
-            Ok(DateSpec::Range(d1, d2))
-        }
-        Rule::sequence => {
-            let dates = pair.into_inner()
-                .map(|p| p.as_str().to_string())
-                .collect();
-            Ok(DateSpec::Sequence(dates))
-        }
-        _ => unreachable!(),
-    }
-}
-
-
-#[derive(Debug, Deserialize)]
-struct HistEntry {
-    link: String,
-    feed: String,
-    date: String,
-    version: String,
-    #[serde(deserialize_with = "to_u64")]
-    size: u64,
-}
-
-fn to_u64<'de, D>(deserializer: D) -> Result<u64, D::Error> where D: Deserializer<'de> {
-    struct U64Visitor;
-
-    impl<'de> Visitor<'de> for U64Visitor {
-        type Value = u64;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("an integer or a string containing an integer")
-        }
-
-        fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E> {
-            Ok(v)
-        }
-
-        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> where E: de::Error {
-            v.parse::<u64>().map_err(E::custom)
-        }
-    }
-
-    deserializer.deserialize_any(U64Visitor)
-}
-
-fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run: bool) -> Result<(), Box<dyn std::error::Error>> {
-    use std::io::{Read, Write};
-    use std::fs::File;
-    use indicatif::{ProgressBar, ProgressStyle};
-    let mut resp = client.get(&entry.link).send()?;
-    let total_size = if dry_run { entry.size } else {
-        client.get(&entry.link).send()?.content_length().unwrap_or(entry.size)
-    };
-    let pb = ProgressBar::new(total_size);
-    let date = NaiveDate::parse_from_str(&entry.date, "%Y%m%d").unwrap().format("%Y-%m-%d").to_string();
-    let path = dir.join(format!("{}-{}.pcap.gz", entry.feed, date));
-    pb.set_style(ProgressStyle::default_bar().template("{msg} {bar:40.white/orange} {bytes_per_sec} | ETA: {eta} | {bytes}/{total_bytes}")
-        .unwrap().progress_chars("■□"));
-    pb.set_message(
-        format!("{i:>5}  {feed:<4} v{ver:<3} {date} ", i = i, feed = entry.feed, ver = entry.version, date = date));
-    
-    if dry_run {
-        pb.set_position(0);
-        pb.abandon();
-        return Ok(());
-    }
-
-    let mut file = File::create(path)?;
-    let mut buffer = [0u8; 8192];
-    let mut downloaded: u64 = 0;
-
-    loop {
-        let n = resp.read(&mut buffer)?;
-        if n == 0 {
-            break;
-        }
-        file.write_all(&buffer[..n])?;
-        downloaded += n as u64;
-        pb.set_position(downloaded);
-    }
-    pb.finish();
-    Ok(())
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use clap::{Command, Arg, arg, ArgAction::SetTrue, value_parser};
@@ -190,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arg!(--tops "Enable TOPS").action(SetTrue),
         arg!(--deep "Enable DEEP").action(SetTrue),
         arg!(--dpls "Enable DPLS").action(SetTrue),
+        arg!(--silent "Disable progress bar").action(SetTrue),
         arg!(--directory <DIR> "Output directory").default_value("./"),
         arg!(--progress-stall-timeout <SECS>).default_value("30").value_parser(value_parser!(u64)),
         Arg::new("").num_args(0..).trailing_var_arg(true)
