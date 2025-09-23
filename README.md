@@ -69,14 +69,31 @@ Options:
 --tops --deep --dpls Selects dataset type, probably you need `tops` only
 --dry-run        Skips downloading but prints out  what would take place
 --directory      Location to save the downloaded files
---from           First trading day to download (YYYY-MM-DD)
---to             Last trading day to download (YYYY-MM-DD)
 
 -h, --help       Display this message
 -v, --version    Display version info
 
+iex-download --tops | --deep | dpls [--directory DIR] [--dry-run] <date specification>
+
 example:
-    iex-download --tops --from 2016-01-01 --to 2025-01-01 --directory /tmp
+    iex-download --tops --directory /tmp --dry-run 2024-04-01..2025-01-01
+    iex-download --tops 2024-04-01:2025-01-01
+    iex-download --deep 20240401..20250101
+    iex-download --deep --tops 2025-01-1?,2025-01-?3
+    iex-download --tops 2025-01-11,2025-01-12,2025-03-01
+
+BNF grammar specification for dates:
+    <spec>       ::= <range> | <sequence> | <date>
+    <range>      ::= <date> <range-sep> <date>
+    <range-sep>  ::= ".." | ":"
+    <sequence>   ::= <date> { "," <date> }
+    <date>       ::= <year> "-" <month> "-" <day>
+                | <year> <month> <day>          ; compact form YYYYMMDD
+    <year>       ::= <digit><digit><digit><digit>
+    <month>      ::= <digit-or-wild><digit-or-wild>
+    <day>        ::= <digit-or-wild><digit-or-wild>
+    <digit>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    <digit-or-wild> ::= <digit> | "?"
 
 Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
 ```

@@ -7,12 +7,105 @@ use std::time::Duration;
 use std::path::PathBuf;
 use reqwest::blocking::Client;
 use serde::Deserialize;
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use serde::de::{self, Visitor};
 use serde::Deserializer;
 use std::fmt;
+use pest::Parser;
+use pest_derive::Parser;
 
 pub const HIST_URL: &str = "https://iextrading.com/api/1.0/hist";
+
+#[derive(Parser)]
+#[grammar = "grammar.pest"]
+struct DateSpecParser;
+
+#[derive(Debug)]
+pub enum DateSpec {
+    Range(String, String),
+    Sequence(Vec<String>),
+    Single(String),
+}
+fn parse_date(s: &str) -> Option<NaiveDate> {
+    NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
+        .or_else(|| NaiveDate::parse_from_str(s, "%Y%m%d").ok())
+}
+fn expand_pattern(pattern: &str) -> Vec<NaiveDate> {
+    let mut results = vec![pattern.to_string()];
+
+    for i in 0..pattern.len() {
+        if &pattern[i..i+1] == "?" {
+            let mut next = Vec::new();
+            for s in &results {
+                for d in '0'..='9' {
+                    let mut chars: Vec<char> = s.chars().collect();
+                    chars[i] = d;
+                    next.push(chars.iter().collect::<String>());
+                }
+            }
+            results = next;
+        }
+    }
+
+    results.into_iter().filter_map(|s| parse_date(&s)).collect()
+}
+
+
+pub fn expand_datespec(ds: DateSpec) -> Vec<NaiveDate> {
+    match ds {
+        DateSpec::Single(s) => expand_pattern(&s),
+
+        DateSpec::Sequence(v) => v.into_iter()
+            .flat_map(|s| expand_pattern(&s))
+            .collect(),
+
+        DateSpec::Range(s1, s2) => {
+            let start_candidates = expand_pattern(&s1);
+            let end_candidates   = expand_pattern(&s2);
+
+            if start_candidates.is_empty() || end_candidates.is_empty() {
+                return Vec::new();
+            }
+
+            let start = *start_candidates.iter().min().unwrap();
+            let end   = *end_candidates.iter().max().unwrap();
+
+            let mut dates = Vec::new();
+            let mut cur = start;
+            while cur <= end {
+                dates.push(cur);
+                cur = cur.succ_opt().unwrap();
+            }
+            dates
+        }
+    }
+}
+
+pub fn parse_datespec(input: &str) -> Result<DateSpec, Box<dyn std::error::Error>> {
+    let mut pairs = DateSpecParser::parse(Rule::spec, input)?;
+    let pair = pairs.next().unwrap();
+    let pair = if pair.as_rule() == Rule::spec {
+        pair.into_inner().next().unwrap()
+    } else { pair };
+
+    match pair.as_rule() {
+        Rule::date => Ok(DateSpec::Single(pair.as_str().to_string())),
+        Rule::range => {
+            let mut inner = pair.into_inner();
+            let d1 = inner.next().unwrap().as_str().to_string();
+            let d2 = inner.next().unwrap().as_str().to_string(); 
+            Ok(DateSpec::Range(d1, d2))
+        }
+        Rule::sequence => {
+            let dates = pair.into_inner()
+                .map(|p| p.as_str().to_string())
+                .collect();
+            Ok(DateSpec::Sequence(dates))
+        }
+        _ => unreachable!(),
+    }
+}
+
 
 #[derive(Debug, Deserialize)]
 struct HistEntry {
@@ -88,8 +181,9 @@ fn download(i: usize, entry: &HistEntry, dir: &PathBuf, client: &Client, dry_run
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use clap::{Command, Arg, arg, ArgAction::SetTrue, value_parser};
     use std::collections::BTreeMap;
+    use std::collections::HashSet;
 
-    let matches = Command::new(clap::crate_name!())
+    let prog = Command::new(clap::crate_name!())
         .version(clap::crate_version!()).author(clap::crate_authors!("\n"))
     .args([
         Arg::new("dry-run").long("dry-run").action(SetTrue),
@@ -98,7 +192,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         arg!(--dpls "Enable DPLS").action(SetTrue),
         arg!(--directory <DIR> "Output directory").default_value("./"),
         arg!(--progress-stall-timeout <SECS>).default_value("30").value_parser(value_parser!(u64)),
-        arg!(--from <DATE> "Start date"), arg!(--to <DATE> "End date"),
+        Arg::new("").num_args(0..).trailing_var_arg(true)
     ]).override_help(r#"
 IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
 IEX. The  datasets are gzip-compressed packet capture (pcap) files of
@@ -118,33 +212,52 @@ Options:
 --tops --deep --dpls Selects dataset type, probably you need `tops` only
 --dry-run        Skips downloading but prints out  what would take place
 --directory      Location to save the downloaded files
---from           First trading day to download (YYYY-MM-DD)
---to             Last trading day to download (YYYY-MM-DD)
 
 -h, --help       Display this message
 -v, --version    Display version info
 
+iex-download --tops | --deep | dpls [--directory DIR] [--dry-run] <date specification>
+
 example:
-    iex-download --tops --from 2016-01-01 --to 2025-01-01 --directory /tmp
+    iex-download --tops --directory /tmp --dry-run 2024-04-01..2025-01-01
+    iex-download --tops 2024-04-01:2025-01-01
+    iex-download --deep 20240401..20250101
+    iex-download --deep --tops 2025-01-1?,2025-01-?3
+    iex-download --tops 2025-01-11,2025-01-12,2025-03-01
+
+BNF grammar specification for dates:
+    <spec>       ::= <range> | <sequence> | <date>
+    <range>      ::= <date> <range-sep> <date>
+    <range-sep>  ::= ".." | ":"
+    <sequence>   ::= <date> { "," <date> }
+    <date>       ::= <year> "-" <month> "-" <day>
+                | <year> <month> <day>          ; compact form YYYYMMDD
+    <year>       ::= <digit><digit><digit><digit>
+    <month>      ::= <digit-or-wild><digit-or-wild>
+    <day>        ::= <digit-or-wild><digit-or-wild>
+    <digit>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    <digit-or-wild> ::= <digit> | "?"
 
 Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
-"#).get_matches();
+"#).trailing_var_arg(true).get_matches();
 
-    let today = Utc::now().date_naive();
-    let dry_run = matches.get_flag("dry-run");
-    let deep = matches.get_flag("deep");
-    let tops = matches.get_flag("tops");
-    let dpls = matches.get_flag("dpls");
-    let directory = PathBuf::from(matches.get_one::<String>("directory").unwrap());
-    let from = matches.get_one::<String>("from").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
-    let to = matches.get_one::<String>("to").map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d")).transpose()?.unwrap_or_else(|| today);
+    let dry_run = prog.get_flag("dry-run");
+    let deep = prog.get_flag("deep");
+    let tops = prog.get_flag("tops");
+    let dpls = prog.get_flag("dpls");
+    let directory = PathBuf::from(prog.get_one::<String>("directory").unwrap());
+    let rest: Vec<String> = prog.get_many::<String>("").unwrap_or_default().cloned().collect();
+    let specs = rest.join(" ");
+    let parsed = parse_datespec(&specs)?;
+    let expanded = expand_datespec(parsed);
+    let wanted: HashSet<NaiveDate> = expanded.into_iter().collect();
 
     let client = Client::builder().timeout(Duration::from_secs(60)).build()?;
     let resp: BTreeMap<String, Vec<HistEntry>> = client.get(HIST_URL).send()?.json()?;
 
     for (i, (date, entries)) in resp.iter().enumerate() {
         let entry_date = NaiveDate::parse_from_str(&date, "%Y%m%d")?;
-        if entry_date < from || entry_date > to {
+        if !wanted.contains(&entry_date) {
             continue;
         }
         for entry in entries {
