@@ -1,3 +1,11 @@
+
+[![CI](https://github.com/vargaconsulting/iex-download/actions/workflows/ci.yml/badge.svg)](https://github.com/vargaconsulting/iex-download/actions/workflows/ci.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17188420.svg)](https://doi.org/10.5281/zenodo.17188420)
+[![GitHub release](https://img.shields.io/github/v/release/vargaconsulting/iex-download.svg)](https://github.com/vargaconsulting/iex-download/releases)
+[![Documentation](https://img.shields.io/badge/docs-stable-blue)](https://vargaconsulting.github.io/iex-download)
+
+
 # IEX High Frequency Dataset
 
 The Investors Exchange (IEX) provides free access to historical datasets such as **Top of Book (TOPS)** and **Depth of Book (DEEP)** through its web interface.  
@@ -5,21 +13,49 @@ Unfortunately, downloading these files manually requires clicking through each l
 
 This project provides `iex-download`, a **Rust-based automation tool** for fetching these datasets programmatically.
 
-## Dataset Overview
+### Why Bother?
 
-- **TOPS**: top-of-book aggregated quotes (`bid`/`ask`), along with reported trade events for each transaction.  
-- **DEEP**: extended order book information, including all reported trades and available quantities at multiple price levels on both bid and ask sides.  
-  *Note: IEX DEEP is not a full Level II feed but provides a richer picture than TOPS alone.*
+Because it lets you grab over **13 TB of IEX tick data** in one shot as of 2025-09-24. Wait, wasn’t it [6 TB last week][101]? Exactly. Trading data is like an iceberg: TOPS shows you the shiny tip (best bid/ask and last trade), while the real bulk is hidden underneath in DEEP and DEEP+. That’s where the weight lives — and where the fun begins.
 
-## Features
+<table><tr><td>
+Here’s the lay of the land:
 
-- Written in **Rust** with strong typing and reliability in mind  
-- Query the official IEX historical data API  
-- Date-range selection for downloading multiple days at once  
-- Choice of **TOPS**, **DEEP** or **DPLS** datasets  
-- **Dry-run mode** for listing available files without downloading  
-- Progress bar and retry logic for robust large-file transfers  
-- Customizable download directory  
+| Feed   | Files to Download | Total Size (≈ GB) |
+|--------|------------------:|------------------:|
+| **TOPS**  | 2,285 | 5,947.68 |
+| **DEEP**  | 2,115 | 5,955.02 |
+| **DEEP+** |   197 | 1,353.52 |
+| **TOTAL** | 4,597 | 13,256.22 |
+
+
+</td><td>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshot-dark.png" width="500">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/screenshot-light.png" width="500">
+  <img alt="Demo screenshot" src="docs/assets/screenshot-light.png" width="500">
+</picture>
+
+</td></tr></table>
+
+### Key Differences (TOPS vs DEEP vs DEEP+)
+
+| Feature                                     | TOPS (Top-of-book)                                                | DEEP (Aggregated)                                                                 | DEEP+ (Order-by-order)                                                                                |
+| ------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Order granularity**                       | Only best bid/ask + last trade                                    | Aggregated by price level (size summed)                                           | Individual orders (each displayed order)                                                              |
+| **OrderID / update per order**              | Not present                                                       | Not present                                                                       | Present                                                                                               |
+| **Hidden / non-display / reserve portions** | Not shown                                                         | Not shown                                                                         | Not shown                                                                                             |
+| **Memory / bandwidth load**                 | Lowest (very compact, minimal updates)                            | Lower (fewer messages, coarser updates)                                           | Higher (tracking many individual orders, cancels, modifications)                                      |
+| **Use-cases**                               | Quote feeds, NBBO tracking, top-level liquidity, lightweight apps | General depth, price level elasticity, coarse modelling, liquidity at price tiers | Detailed book shape, order flow-level strategy, detailed execution modelling, microstructure research |
+
+
+## Features at a Glance
+
+- **Progress bar with attitude** → because watching terabytes flow should feel satisfying.  
+- **PEG-based date parser** → type `2025-01-??` or `2025-01-02,2025-01-03,2025-01-06,2025-01-2?` and it just works, no regex headaches.  
+- **One tiny ELF** → a single 3.5 MB executable (`-rwxrwxr-x 2 steven steven 3.5M Sep 23 11:00 target/release/iex-download`).  
+  No Python venvs, no dependency jungles. Drop it anywhere, `chmod +x`, and let it rip.  
+- Need details? Just ask my imaginary friend, Manual. He’s got you covered. `man iex-download` of `iex-download --help`
 
 ## Prerequisites
 
@@ -38,67 +74,8 @@ Build and run:
 make && make install
 ```
 
-## Usage
-
-The tool downloads gzip-compressed packet capture (`.pcap.gz`) files of Ethernet frames.
-These can be further processed with the [`iex2h5`](https://github.com/vargaconsulting/iex2h5) utility to transform raw packet data into structured **HDF5** format for analytics.
-
-After running `iex-download`, the chosen output directory will contain TOPS or DEEP datasets named according to their trading day.
-
-The data is provided free of charge by IEX.
-By accessing or using IEX Historical Data, you agree to their [Terms of Use](https://iextrading.com/iex-historical-data-terms/).
-
-### Command-line Options
-
-```bash
-IEX-DOWNLOAD  is a web  scraping  utility to retrieve  datasets  from
-IEX. The  datasets are gzip-compressed packet capture (pcap) files of
-Ethernet frames, which can be further processed using the H5CPP-based
-`iex2h5` conversion  utility to  transform them into the HDF5 format.
-After running the script, the  `download` directory will be populated
-with TOPS or DEEP  gzip-compressed datasets,  named  according to the
-corresponding trading day.  For details  on  processing the data, see
-`iex2h5`. 
-
-The data is provided free of charge by IEX. By accessing or using IEX
-Historical  Data, you  agree  to their  Terms of Use. For more infor-
-mation, visit: https://iextrading.com/iex-historical-data-terms/
-
-Options:
-
---tops --deep --dpls Selects dataset type, probably you need `tops` only
---dry-run        Skips downloading but prints out  what would take place
---directory      Location to save the downloaded files
-
--h, --help       Display this message
--v, --version    Display version info
-
-iex-download --tops | --deep | dpls [--directory DIR] [--dry-run] <date specification>
-
-example:
-    iex-download --tops --directory /tmp --dry-run 2024-04-01..2025-01-01
-    iex-download --tops 2024-04-01:2025-01-01
-    iex-download --deep 20240401..20250101
-    iex-download --deep --tops 2025-01-1?,2025-01-?3
-    iex-download --tops 2025-01-11,2025-01-12,2025-03-01
-
-BNF grammar specification for dates:
-    <spec>       ::= <range> | <sequence> | <date>
-    <range>      ::= <date> <range-sep> <date>
-    <range-sep>  ::= ".." | ":"
-    <sequence>   ::= <date> { "," <date> }
-    <date>       ::= <year> "-" <month> "-" <day>
-                | <year> <month> <day>          ; compact form YYYYMMDD
-    <year>       ::= <digit><digit><digit><digit>
-    <month>      ::= <digit-or-wild><digit-or-wild>
-    <day>        ::= <digit-or-wild><digit-or-wild>
-    <digit>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-    <digit-or-wild> ::= <digit> | "?"
-
-Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
-```
-
 [100]: https://en.wikipedia.org/wiki/Web_scraping
 [101]: https://iextrading.com/trading/market-data/
 [102]: https://steven-varga.ca/site/iex2h5/
 [103]: https://steven-varga.ca/iex2h5/
+
