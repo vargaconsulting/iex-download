@@ -47,7 +47,7 @@ iex2h5 -c rts --time-interval 00:00:10 --date-range 2025-09-01:2025-09-30 -o exp
     function waitForAsciinemaPlayer(attempts = 10) {
       if (typeof AsciinemaPlayer !== "undefined") {
         AsciinemaPlayer.create('casts/iex-download-demo.cast', document.getElementById('asciicast-iex-download-demo'), {
-          cols: 148, rows: 39, autoPlay: true,  loop: true, speed: 3.0,  idleTimeLimit: .1, controls: true
+          cols: 148, rows: 39, autoPlay: true,  loop: true, speed: 1.0,  idleTimeLimit: .3, controls: true
         });
       } else if (attempts > 0) {
         setTimeout(() => waitForAsciinemaPlayer(attempts - 1), 200);
@@ -61,8 +61,8 @@ iex2h5 -c rts --time-interval 00:00:10 --date-range 2025-09-01:2025-09-30 -o exp
 
 ## :fontawesome-solid-terminal:{.icon} Related Projects
 
-* **[IEX2H5](site/iex2h5.md)** — A blazing-fast tick data archival and analytics system for IEX market data.
-* **[H5CPP](site/h5cpp.md)** — A reflection-powered C++17/23 library for working with HDF5 in scientific computing and trading.
+* **[IEX2H5][203]** — A blazing-fast tick data archival and analytics system for IEX market data.
+* **[H5CPP][204]** — A reflection-powered C++17/23 library for working with HDF5 in scientific computing and trading.
 
 ### Notice:
 “[Data provided][100] for free by IEX. By accessing or using IEX Historical Data, you agree to the [IEX Historical Data Terms of Use][101].”
@@ -79,4 +79,5 @@ iex2h5 -c rts --time-interval 00:00:10 --date-range 2025-09-01:2025-09-30 -o exp
 [201]: https://steven-varga.ca/blog/longest-active-stocks-from-iex-pcap/
 [202]: https://steven-varga.ca/site/iex2h5/
 [203]: https://steven-varga.ca/iex2h5/
+[204]: https://steven-varga.ca/site/h5cpp/
 

@@ -5,7 +5,6 @@
 [![GitHub release](https://img.shields.io/github/v/release/vargaconsulting/iex-download.svg)](https://github.com/vargaconsulting/iex-download/releases)
 [![Documentation](https://img.shields.io/badge/docs-stable-blue)](https://vargaconsulting.github.io/iex-download)
 
-
 # IEX High Frequency Dataset
 
 The Investors Exchange (IEX) provides free access to historical datasets such as **Top of Book (TOPS)** and **Depth of Book (DEEP)** through its web interface. Unfortunately, downloading these files manually requires clicking through each link — impractical for large-scale research or backtesting. This project provides `iex-download`, a **Rust-based automation tool** for fetching these datasets programmatically.

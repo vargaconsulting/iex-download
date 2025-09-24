@@ -15,3 +15,20 @@
 
 
 
+/overrides/
+/badges/
+/assets/
+/download-demo/
+/search/
+/spec/
+/.nojekyll
+/*.html
+/*.xml
+
+.venv
+site/
+
+# data
+*.h5
+*.gz
+*.csv
