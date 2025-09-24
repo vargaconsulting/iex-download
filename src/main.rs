@@ -82,6 +82,10 @@ Copyright © 2017–2025 Varga LABS, Toronto, ON, Canada info@vargalabs.com
     let (dry_run, silent, deep, tops, dpls) = (
         prog.get_flag("dry-run"), prog.get_flag("silent"),
         prog.get_flag("deep"), prog.get_flag("tops"), prog.get_flag("dpls") );
+    if !(tops || deep || dpls) { // when no dataset is selected, just give up with a quick note... 
+        eprintln!("warning: no dataset selected (use --tops, --deep, or --dpls)");
+        std::process::exit(1);
+    }
 
     let directory = PathBuf::from(prog.get_one::<String>("directory").unwrap());
     let rest: Vec<String> = prog.get_many::<String>("").unwrap_or_default().cloned().collect();
