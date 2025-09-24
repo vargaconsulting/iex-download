@@ -1,0 +1,113 @@
+/* === Light mode (default) === */
+body[data-md-color-scheme="default"] .asciicast-player .asciinema-terminal {
+  background: #ffffff !important;
+  color: #2e2e2e !important;
+}
+body[data-md-color-scheme="default"] .asciicast-player .asciinema-terminal span {
+  color: #2e2e2e !important;
+}
+
+/* === Dark mode ("slate") === */
+body[data-md-color-scheme="slate"] .asciicast-player .asciinema-terminal {
+  color: #c9d1d9 !important;
+}
+body[data-md-color-scheme="slate"] .asciicast-player .asciinema-terminal span {
+  color: #c9d1d9 !important;
+}
+
+/* === Solarized mode (if used) === */
+body[data-md-color-scheme="solarized"] .asciicast-player .asciinema-terminal {
+  color: #00000 !important;
+}
+body[data-md-color-scheme="solarized"] .asciicast-player .asciinema-terminal span {
+  color: #00000 !important;
+}
+
+.asciinema-terminal {
+    overflow: visible;
+    padding-bottom: 1em;
+}
+
+
+/* Transparent background for the player */
+.asciicast-player .asciinema-terminal {
+  background: transparent !important;
+  color: currentColor !important; /* inherits from parent */
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Make player container itself transparent */
+.asciicast-player .asciinema-player {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  background: transparent !important;
+}
+/* Remove extra black padding at bottom */
+.asciicast-player {
+  background: transparent !important;
+}
+/*nuke control bar*/
+/* 🔒 Permanently disable controls */
+.asciicast-player .asciinema-player .control-bar,
+.asciicast-player .asciinema-player .play-button,
+.asciicast-player .asciinema-player .timeline,
+.asciicast-player .asciinema-player .start-prompt {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Prevent hover overlay from re-enabling anything */
+.asciicast-player .asciinema-player:hover {
+  cursor: default !important;
+}
+
+/* Remove any padding/margin/bars left behind */
+.asciicast-player .asciinema-player {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+
+/* strip of fcolors */
+/* Make ALL asciicast players transparent by default */
+.asciicast-player .asciinema-terminal {
+  background: transparent !important;
+  color: currentColor !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.asciicast-player .asciinema-player {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+/* Nuke control bar globally for all players */
+.asciicast-player .asciinema-player .control-bar,
+.asciicast-player .asciinema-player .play-button,
+.asciicast-player .asciinema-player .timeline,
+.asciicast-player .asciinema-player .start-prompt {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.asciicast-player .asciinema-player:hover {
+  cursor: default !important;
+}
+
+/* Override specific hardcoded colors on span elements (if any) */
+.asciicast-player .asciinema-terminal span {
+  color: currentColor !important;
+}
+.asciicast-player .asciinema-terminal {
+  background: transparent !important;
+  color: currentColor !important;
+}
+
