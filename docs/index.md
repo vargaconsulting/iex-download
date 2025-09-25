@@ -1,5 +1,6 @@
 ---
 hide:
+  - navigation
   - toc
 ---
 
@@ -40,8 +41,8 @@ iex2h5 -c rts --time-interval 00:00:10 --date-range 2025-09-01:2025-09-30 -o exp
 **Tip:** Don’t try to pull the entire dataset in one go (we’re talking 13+ TB and counting). Instead, download in manageable batches and incrementally add the IrRegular Time Series (IRTS) stream into your HDF5 container. Once caught up to the current trading day, you only need to maintain it with daily updates. That way the commands are tight, the warning about data size is still there, but placed below as advice.  
 
 ## :material-clock-fast:{.icon} Demo
-<div id="asciicast-iex-download-demo"  class="md:block w-4/5 border-2 border-solid border-red rounded-lg shadow-lg m-4 
-            transition-transform duration-500 hover:scale-95 asciicast-player"></div>
+<div id="asciicast-iex-download-demo" class="asciicast-player [&_.ap-terminal]:text-[0.55rem] w-full">
+</div>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     function waitForAsciinemaPlayer(attempts = 10) {
