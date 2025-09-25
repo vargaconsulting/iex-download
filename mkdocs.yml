@@ -1,57 +1,57 @@
-site_name: IEX DOWNLOAD
+site_name: VargaLABS
+site_url: https://steven-varga.ca
+site_description: IEX-DOWNLOAD — Fast Access to the Full IEX Historical Market Feed (TOPS, DEEP & DEEP+) since 2017
+site_author: Steven Varga
+copyright: Steven Varga
 docs_dir: docs
+twitter_handle: "@vargaconsulting"
 nav:
   - Overview: index.md
-
+plugins:
+  - search
 theme:
   name: material
   custom_dir: docs/overrides
-  highlightjs: true
   features:
-    - navigation.instant <- messes up mathjax, keep it disabled!
+    - navigation.instant #<- messes up mathjax, keep it disabled!
     - search.suggest
     - content.code.copy
+    - content.tooltips    
   icon:
   admonition:
   palette:
     - scheme: solarized
       primary: orange
       toggle:
-        icon: material/lightbulb
+        icon: moon
         name: Switch to dark mode
     - scheme: slate
       primary: orange
       toggle:
-        icon: material/lightbulb-outline
+        icon: sun
         name: Switch to light mode
 extra:
   social:
-    - icon: simple/x
-      link: https://x.com/vargaconsulting 
-    - icon: simple/reddit
-      link: https://www.reddit.com/user/vargaconsulting/submitted/
-    - icon: simple/substack
-      link: https://substack.com/@vargaconsulting
-    - icon: simple/medium
-      link: https://medium.com/@steven.varga      
-    - icon: fontawesome/brands/github
-      link: https://github.com/orgs/vargaconsulting/repositories
-    - icon: fontawesome/brands/linkedin
+    - icon: material/whatsapp
+      link: https://wa.me/16475611829
+    - icon: material/email-fast
+      link: mailto:steven@vargaconsulting.ca
+    - icon: material/twitter
+      link: https://x.com/vargaconsulting
+    - icon: material/linkedin
       link: https://www.linkedin.com/in/steven-varga-04224a19/
-  icons:
-    - material
-    - fontawesome/brands
-    - fontawesome/solid
+    - icon: material/github 
+      link: https://github.com/vargaconsulting
+
   analytics:
     provider: google
-    property: G-QC2C4XW904
+    property: G-L58Z6SZ3TN
 markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
   - tables
   - footnotes
-  - pymdownx.details
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg  
@@ -61,16 +61,25 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
   - pymdownx.arithmatex:
       generic: true
+  - pymdownx.details
+  - pymdownx.superfences
   - pymdownx.blocks.caption
   - pymdownx.caret
   - pymdownx.mark
   - pymdownx.tilde  
   - pymdownx.critic
   - pymdownx.keys
+  - pymdownx.snippets:
+      base_path:
+        - docs/blog/specs
+        - docs/blog/examples
+        - docs/blog/posts
+        - docs/blog/pics
+        - docs/blog/data
+        - docs/blog/scripts
+        - docs/blog/casts
     
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
