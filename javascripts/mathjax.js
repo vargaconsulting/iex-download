@@ -1,31 +1,33 @@
-// Load this BEFORE the MathJax CDN script in mkdocs.yml
+// MathJax v3 configuration for MkDocs Material
+// Place this file BEFORE the MathJax CDN script in mkdocs.yml
+
 window.MathJax = {
   tex: {
-    // include the delimiters you actually use:
-    inlineMath: [['\\(', '\\)'], ['$', '$']],
-    displayMath: [['\\[', '\\]'], ['$$', '$$']],
+    inlineMath: [['\\(', '\\)'], ['$', '$']],    // inline math
+    displayMath: [['\\[', '\\]'], ['$$', '$$']], // display math
     processEscapes: true,
     processEnvironments: true
   },
   options: {
-    // With arithmatex(generic:true), content is wrapped in .arithmatex
-    processHtmlClass: 'arithmatex',
-    ignoreHtmlClass: '.*'   // process only .arithmatex
+    processHtmlClass: 'arithmatex', // only process .arithmatex spans
+    ignoreHtmlClass: '.*'
   },
   startup: {
-    // we'll control typesetting manually to avoid races
-    typeset: false
+    typeset: false // disable auto-typeset; we'll call it ourselves
   }
 };
 
-// Re-typeset after every MkDocs Material page swap
+// Hook into MkDocs Material instant navigation
 if (window.document$) {
   document$.subscribe(() => {
-    const container = document.querySelector('.md-content'); // main article
-    // Defer to next animation frame so DOM is fully replaced
-    requestAnimationFrame(() => {
-      MathJax.typesetClear();                      // clear previous MathItems
-      MathJax.typesetPromise([container]);         // typeset current page
-    });
+    const container = document.querySelector('.md-content');
+    if (window.MathJax) {
+      // Ensure MathJax has finished startup before typesetting
+      MathJax.startup.promise
+        .then(() => MathJax.typesetPromise([container]))
+        .catch(err =>
+          console.error("MathJax typeset failed: " + err.message)
+        );
+    }
   });
 }

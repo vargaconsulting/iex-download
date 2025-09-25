@@ -49,34 +49,7 @@
           Blockchain, cryptographic protocols, HPC, or trading systems in C++, Rust, Julia, Python, R and CUDA
         </div>
         <div class="custom-footer-right">
-          © 2017–2025 Varga Consulting, Toronto, ON, Canada 🇨🇦
-
-          {% if config.extra.social %}
-            <span class="md-social-inline">
-              {% macro split_and_get(value, sep, index) %}
-                {%- if value.split is defined -%}
-                  {%- set parts = value.split(sep) -%}
-                {%- else -%}
-                  {%- set parts = value | split(sep) -%}
-                {%- endif -%}
-                {{- parts[index] -}}
-              {% endmacro %}
-              {% for social in config.extra.social %}
-                {% set rel = "noopener" %}
-                {% if "mastodon" in social.icon %}
-                  {% set rel = rel ~ " me" %}
-                {% endif %}
-                {% set title = social.name %}
-                {% if not title and "//" in social.link %}
-                  {% set url = split_and_get(social.link, "//", 1) %}
-                  {% set title = split_and_get(url, "/", 0) %}
-                {% endif %}
-                <a href="{{ social.link }}" target="_blank" rel="{{ rel }}" title="{{ title | e }}" class="md-social__link">
-                  {% include ".icons/" ~ social.icon ~ ".svg" %}
-                </a>
-              {% endfor %}
-            </span>
-          {% endif %}
+          © 2017–2025 VargaLABS, Toronto, ON, Canada 🇨🇦
         </div>
       </div>
     </div>

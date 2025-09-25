@@ -16,9 +16,7 @@
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
-          <span class="md-ellipsis">
-            IEX-DOWNLOAD — Fast Access to the Full IEX Historical Market Feed (TOPS, DEEP & DEEP+) since 2017
-          </span>
+          <span class="md-ellipsis"> {{ config.site_description }} </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
@@ -42,16 +40,9 @@
     {% if config.extra.alternate %}
       {% include "partials/alternate.html" %}
     {% endif %}
-    {% if "material/search" in config.plugins %}
-      {% set search = config.plugins["material/search"] | attr("config") %}
-      {% if search.enabled %}
-        <label class="md-header__button md-icon" for="__search">
-          {% set icon = config.theme.icon.search or "material/magnify" %}
-          {% include ".icons/" ~ icon ~ ".svg" %}
-        </label>
-        {% include "partials/search.html" %}
-      {% endif %}
-    {% endif %}
+<!-- -->
+
+<!-- -->
     {% if config.repo_url %}
       <div class="md-header__source">
         {% include "partials/source.html" %}
