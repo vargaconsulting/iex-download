@@ -49,3 +49,21 @@ body[data-md-color-scheme="slate"]
 }
 
 
+body[data-md-color-scheme="solarized"] .asciicast-player {
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 6px;
+  border-color: grey;
+  padding-left: .1;
+  padding-right: .1;
+  box-shadow: 0 20px 25px -5px rgba(66, 64, 64, 0.5), 0 8px 10px -6px rgba(233, 160, 2, 0.6);
+}
+
+/* Dark (slate) */
+body[data-md-color-scheme="slate"] .asciicast-player {
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 6px;
+  border-color: #967738;
+  box-shadow: 0 20px 25px -5px rgba(111, 106, 106, 0.9), 0 8px 10px -6px rgba(119, 88, 26, 0.9)
+}
