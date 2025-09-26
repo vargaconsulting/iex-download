@@ -1,57 +1,51 @@
-/* === Theme aware foreground/background === */
-body[data-md-color-scheme="solarized"] .ap-player {
-  --term-color-foreground: var(--md-default-fg-color);
-  --term-color-background: transparent;
+/* ==========================================================================
+   ASCIINEMA PLAYER (Tailwind Prototype Cleaned)
+   --------------------------------------------------------------------------
+   - Stripped of all stock themes (dracula, monokai, nord, etc.)
+   - No fixed font-size, width, or height
+   - Transparent backgrounds by default
+   - Only functional pieces: player layout, terminal, cursor, overlays, controls
+   ========================================================================== */
+
+/* Wrapper / container */
+
+/* Example: force orange in solarized theme */
+body[data-md-color-scheme="solarized"] 
+  div.ap-control-bar .ap-progressbar .ap-bar .ap-gutter-full {
+  background-color: orange;
+}
+div.ap-control-bar .ap-progressbar .ap-bar .ap-gutter {
+  position: absolute;
+  bottom: 14px;   /* instead of top: 15px */
+  height: 7px;
+}
+div.ap-control-bar .ap-progressbar .ap-bar .ap-gutter-empty {
+  background-color: grey;
+  position: absolute;
+  bottom: 14px;   /* instead of top: 15px */
+  height: 7px;
+}
+/* Default (light / solarized): orange */
+div.ap-control-bar .ap-progressbar .ap-bar .ap-gutter-full {
+  background-color: orange;
 }
 
-body[data-md-color-scheme="slate"] .ap-player {
-  --term-color-foreground: var(--md-default-fg-color);
-  --term-color-background: transparent;
+/* Dark slate theme: lighter orange/yellow for contrast */
+body[data-md-color-scheme="slate"] 
+  div.ap-control-bar .ap-progressbar .ap-bar .ap-gutter-full {
+  background-color: #ffcc66;  /* softer, lighter orange */
 }
 
-/* Force background transparency everywhere */
-.asciinema-player,
-.asciinema-player .ap-player,
-.asciinema-player pre.ap-terminal {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--term-color-foreground) !important;
+body[data-md-color-scheme="solarized"] 
+  div.ap-control-bar .ap-playback-button {
+  background-color: #ffcc66;
+  border-radius: 4px;
 }
 
-/* Fix bottom line clipping */
-.ap-terminal {
-  line-height: var(--term-line-height) !important;
-  height: auto !important;
-  min-height: calc(var(--term-rows, 24) * var(--term-line-height, 1.3333em)) !important;
-  padding-bottom: 0.25em; /* a little breathing room */
+body[data-md-color-scheme="slate"] 
+  div.ap-control-bar .ap-playback-button {
+  background-color: gray;
+  border-radius: 4px;
 }
 
-/* Let the player resize to content, don’t clip rows */
-.ap-player,
-.ap-terminal {
-  height: auto !important;
-  min-height: unset !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-.ap-terminal {
-  white-space: pre !important;
-  line-height: 1.4em !important; /* tweak until rows align */
-}
-/* Hide the fullscreen button */
-.asciinema-player .ap-control-bar .ap-fullscreen {
-  display: none !important;
-}
 
-.asciinema-player {
-  max-width: 100%;
-  height: auto;
-  overflow: hidden;
-}
-
-/* Scale the terminal content to fit */
-.asciinema-player pre.ap-terminal {
-  transform-origin: top left;
-  transform: scale(0.9); /* adjust until it fits */
-}
