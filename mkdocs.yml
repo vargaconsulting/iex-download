@@ -31,6 +31,7 @@ theme:
         icon: sun
         name: Switch to light mode
 extra:
+  homepage: https://steven-varga.ca/
   social:
     - icon: material/whatsapp
       link: https://wa.me/16475611829
